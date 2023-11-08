@@ -20,6 +20,14 @@ export class RestAPIStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       tableName: "Movies",
     });
+    const movieReviewsTable = new dynamodb.Table(this,"MovieReviewsTable",
+    {
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      partitionKey: { name: "reviewId", type: dynamodb.AttributeType.NUMBER },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      tableName: "MovieReviews",
+    });
+
 
     const movieCastsTable = new dynamodb.Table(this, "MovieCastTable", {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -33,6 +41,8 @@ export class RestAPIStack extends cdk.Stack {
       indexName: "roleIx",
       sortKey: { name: "roleName", type: dynamodb.AttributeType.STRING },
     });
+    
+    
 
 
     
@@ -107,6 +117,21 @@ export class RestAPIStack extends cdk.Stack {
             },
           }
         );
+        const addMovieReviewsFn = new lambdanode.NodejsFunction(
+          this,
+          "AddMovieReviewsFn",
+          {
+            architecture: lambda.Architecture.ARM_64,
+            runtime: lambda.Runtime.NODEJS_16_X,
+            entry: `${__dirname}/../lambdas/addMovieReviews.ts`,
+            timeout: cdk.Duration.seconds(10),
+            memorySize: 128,
+            environment: {
+              TABLE_NAME: movieCastsTable.tableName,
+              REGION: "eu-west-1",
+            },
+          }
+        )
 
 
         new custom.AwsCustomResource(this, "moviesddbInitData", {
@@ -135,6 +160,7 @@ export class RestAPIStack extends cdk.Stack {
         moviesTable.grantReadWriteData(deleteMovieFn)
         movieCastsTable.grantReadData(getMovieCastMembersFn)
         movieCastsTable.grantReadWriteData(getMovieByIdFn)
+        movieReviewsTable.grantReadWriteData(addMovieReviewsFn)
         
         // REST API 
     const api = new apig.RestApi(this, "RestAPI", {
@@ -151,6 +177,7 @@ export class RestAPIStack extends cdk.Stack {
       },
     });
 
+  
     const moviesEndpoint = api.root.addResource("movies");
     moviesEndpoint.addMethod(
       "GET",
@@ -177,6 +204,14 @@ export class RestAPIStack extends cdk.Stack {
       "GET",
       new apig.LambdaIntegration(getMovieCastMembersFn, { proxy: true })
     );
+
+    const movieReviewsEndpoint = api.root.addResource("reviews");
+    movieReviewsEndpoint.addMethod(
+      "POST",
+      new apig.LambdaIntegration(addMovieReviewsFn, { proxy: true })
+    );
+  
+
     
       }
     }
