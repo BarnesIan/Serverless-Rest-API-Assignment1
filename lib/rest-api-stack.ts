@@ -133,21 +133,21 @@ export class RestAPIStack extends cdk.Stack {
             },
           }
         );
-        // const addMovieReviewsFn = new lambdanode.NodejsFunction(
-        //   this,
-        //   "AddMovieReviewsFn",
-        //   {
-        //     architecture: lambda.Architecture.ARM_64,
-        //     runtime: lambda.Runtime.NODEJS_16_X,
-        //     entry: `${__dirname}/../lambdas/addMovieReviews.ts`,
-        //     timeout: cdk.Duration.seconds(10),
-        //     memorySize: 128,
-        //     environment: {
-        //       TABLE_NAME: movieCastsTable.tableName,
-        //       REGION: "eu-west-1",
-        //     },
-        //   }
-        // );
+        const addMovieReviewFn = new lambdanode.NodejsFunction(
+          this,
+          "AddMovieReviewsFn",
+          {
+            architecture: lambda.Architecture.ARM_64,
+            runtime: lambda.Runtime.NODEJS_16_X,
+            entry: `${__dirname}/../lambdas/addMovieReview.ts`,
+            timeout: cdk.Duration.seconds(10),
+            memorySize: 128,
+            environment: {
+              TABLE_NAME: movieReviewsTable.tableName,
+              REGION: "eu-west-1",
+            },
+          }
+        );
      
 
 
@@ -178,7 +178,7 @@ export class RestAPIStack extends cdk.Stack {
         moviesTable.grantReadWriteData(deleteMovieFn)
         movieCastsTable.grantReadData(getMovieCastMembersFn)
         movieCastsTable.grantReadWriteData(getMovieByIdFn)
-       // movieReviewsTable.grantReadWriteData(addMovieReviewsFn)
+        movieReviewsTable.grantReadWriteData(addMovieReviewFn)
         movieReviewsTable.grantReadWriteData(getMovieReviewsByIdFn)
         // REST API 
     const api = new apig.RestApi(this, "RestAPI", {
@@ -224,10 +224,12 @@ export class RestAPIStack extends cdk.Stack {
     );
 
     const movieReviewsEndpoint = movieEndpoint.addResource("reviews");
-    // movieReviewsEndpoint.addMethod(
-    //   "POST",
-    //   new apig.LambdaIntegration(addMovieReviewsFn, { proxy: true })
-    // );
+    const movieReviewEndpoint = moviesEndpoint.addResource("reviews");
+   
+    movieReviewEndpoint.addMethod(
+      "POST",
+      new apig.LambdaIntegration(addMovieReviewFn, { proxy: true })
+    );
    
     movieReviewsEndpoint.addMethod(
       "GET",

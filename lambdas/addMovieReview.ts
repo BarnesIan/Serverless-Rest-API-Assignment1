@@ -5,7 +5,7 @@ import Ajv from "ajv";
 import schema from "../shared/types.schema.json";
 
 const ajv = new Ajv();
-const isValidBodyParams = ajv.compile(schema.definitions["Review"] || {});
+const isValidBodyParams = ajv.compile(schema.definitions["MovieReviewParams"] || {});
 
 const ddbDocClient = createDDbDocClient();
 
@@ -31,7 +31,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
         },
         body: JSON.stringify({
           message: `Incorrect type. Must match Review schema`,
-          schema: schema.definitions["Review"],
+          schema: schema.definitions["MovieReviewParams"],
         }),
       };
     }

@@ -5,14 +5,15 @@ import Ajv from "ajv";
 import schema from "../shared/types.schema.json";
 
 const ajv = new Ajv();
-const isValidQueryParams = ajv.compile(
-  schema.definitions["MovieReviewQueryParams"] || {}
-);
+
 
 const ddbDocClient = createDDbDocClient();
 
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => { 
   try {
+    const isValidQueryParams = ajv.compile(
+      schema.definitions["MovieReviewQueryParams"] || {}
+    );
     console.log("Event: ", event);
     const parameters  = event?.pathParameters;
     const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
