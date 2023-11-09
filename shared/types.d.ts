@@ -11,6 +11,12 @@ export type Movie = {
     vote_average: number;
     vote_count: number
   }
+export type MovieReview = {
+    movieId: number;
+    reviewerName: string,
+    rating: number;
+    review: string;
+  }
 
 export type MovieCast = {
     movieId: number;
@@ -23,4 +29,4 @@ export type MovieCastMemberQueryParams = {
     movieId: string;
     actorName?: string;
     roleName?: string
-  }
+  };

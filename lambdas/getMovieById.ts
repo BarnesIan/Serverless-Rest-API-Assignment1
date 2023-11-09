@@ -17,6 +17,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       const parameters = event?.pathParameters;
       const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
       const cast = event.queryStringParameters?.cast == "true";
+      const movieReview = event.queryStringParameters?.review == "true";
 
 
 
@@ -65,6 +66,22 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       );
       body.data.cast = castOutput.Items;
     }
+
+    if (movieReview){
+      let commandInput:
+      QueryCommand = {
+        TableName: "MovieReviews",
+        KeyConditionExpression: "movieId = :m",
+        ExpressionAtributeValues: {
+          ":m": movieId,
+        },
+      };
+      const reviewOutput = await ddbDocClient.send(
+        new QueryCommand(commandInput)
+      );
+      body.data.cast = reviewOutput.Items;
+    }
+
 
     // Return Response
     return {
