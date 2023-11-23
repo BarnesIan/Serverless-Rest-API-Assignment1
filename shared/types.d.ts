@@ -30,3 +30,7 @@ export type MovieCastMemberQueryParams = {
     actorName?: string;
     roleName?: string
   };
+   // Used to validate the query string og HTTP Get requests
+export type MovieReviewsQueryParams = {
+    minRating: number;
+};
