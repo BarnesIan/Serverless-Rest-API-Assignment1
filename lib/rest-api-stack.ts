@@ -24,6 +24,7 @@ export class RestAPIStack extends cdk.Stack {
     {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       partitionKey: { name: "movieId", type: dynamodb.AttributeType.NUMBER },
+      sortKey: { name: "reviewerName", type: dynamodb.AttributeType.STRING },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       tableName: "MovieReview",
     });
@@ -148,6 +149,22 @@ export class RestAPIStack extends cdk.Stack {
             },
           }
         );
+      
+        const getMovieReviewsByReviewerNameFn = new lambdanode.NodejsFunction(
+          this,
+          "GetReviewByReviewerName",
+          {
+            architecture: lambda.Architecture.ARM_64,
+            runtime: lambda.Runtime.NODEJS_16_X,
+            entry: `${__dirname}/../lambdas/getMovieReviewByReviewerName.ts`,
+            timeout: cdk.Duration.seconds(10),
+            memorySize: 128,
+            environment: {
+              TABLE_NAME: movieReviewsTable.tableName,
+              REGION: "eu-west-1",
+            },
+          }
+        );
      
 
 
@@ -180,6 +197,8 @@ export class RestAPIStack extends cdk.Stack {
         movieCastsTable.grantReadWriteData(getMovieByIdFn)
         movieReviewsTable.grantReadWriteData(addMovieReviewFn)
         movieReviewsTable.grantReadWriteData(getMovieReviewsByIdFn)
+        movieReviewsTable.grantReadWriteData(getMovieReviewsByReviewerNameFn)
+
         // REST API 
     const api = new apig.RestApi(this, "RestAPI", {
       description: "demo api",
@@ -225,7 +244,13 @@ export class RestAPIStack extends cdk.Stack {
 
     const movieReviewsEndpoint = movieEndpoint.addResource("reviews");
     const movieReviewEndpoint = moviesEndpoint.addResource("reviews");
-   
+    
+    const movieReviewersNameEndpoint = movieReviewsEndpoint.addResource("{reviewerName}");
+    movieReviewersNameEndpoint.addMethod(
+      "GET",
+      new apig.LambdaIntegration(getMovieReviewsByReviewerNameFn, { proxy: true })
+    );
+    
     movieReviewEndpoint.addMethod(
       "POST",
       new apig.LambdaIntegration(addMovieReviewFn, { proxy: true })
