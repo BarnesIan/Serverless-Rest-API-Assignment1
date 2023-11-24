@@ -50,21 +50,23 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
     // Update the table details
-    
+
     const updateInput = {
       TableName: process.env.TABLE_NAME,
       Key: {
         movieId: movieId,
         reviewerName: reviewerName,
       },
-      UpdateExpression: "SET #rating = :rating, #review = :review",
+      UpdateExpression: "SET #rating = :rating, #content = :content, #reviewDate = :reviewDate",
       ExpressionAttributeNames: {
         "#rating": "rating",
-        "#review": "review",
+        "#content": "content",
+        "#reviewDate": "reviewDate",
       },
       ExpressionAttributeValues: {
         ":rating": body.rating,
-        ":review": body.review,
+        ":content": body.content,
+        ":reviewDate": body.reviewDate,
       },
     };
 

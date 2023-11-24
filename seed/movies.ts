@@ -1,4 +1,4 @@
-import {Movie, MovieCast, MovieReview} from '../shared/types'
+import {Movie, MovieReview} from '../shared/types'
 
 export const movies : Movie[] = [
   {
@@ -55,56 +55,34 @@ export const movies : Movie[] = [
   },
 ];
 
-export const movieCasts: MovieCast[] = [
-  {
-    movieId: 1234,
-    actorName: "Joe Bloggs",
-    roleName: "Male Character 1",
-    roleDescription: "description of character 1",
-  },
-  {
-    movieId: 1234,
-    actorName: "Alice Broggs",
-    roleName: "Female Character 1",
-    roleDescription: "description of character 2",
-  },
-  {
-    movieId: 1234,
-    actorName: "Joe Cloggs",
-    roleName: "Male Character 2",
-    roleDescription: "description of character 3",
-  },
-  {
-    movieId: 2345,
-    actorName: "Joe Bloggs",
-    roleName: "Male Character 1",
-    roleDescription: "description of character 3",
-  },
-];
 
 export const movieReviews : MovieReview[] = [
   {
     movieId: 1234,
     reviewerName: "BarryMore",
+    reviewDate:"2023-11-10",
     rating: 4,
-    review: "Awesome Movie Loved it!"
+    content: "Awesome Movie Loved it!"
   },
   {
     movieId:  3456,
     reviewerName: "JacobDole",
+    reviewDate:"2023-10-24",
     rating: 1,
-    review: "Very very poor"
+    content: "Very very poor"
   },
   {
     movieId: 2345,
     reviewerName: "CarryMiles",
+    reviewDate:"2023-09-01",
     rating: 5,
-    review: "Best Movie Ever!"
+    content: "Best Movie Ever!"
   },
   {
     movieId: 4567,
     reviewerName: "DanielGabe",
+    reviewDate:"2022-11-10",
     rating: 2,
-    review: "It was okay I guess"
+    content: "It was okay I guess"
   },
 ];
