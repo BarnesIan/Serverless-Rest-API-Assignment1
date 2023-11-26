@@ -8,11 +8,48 @@ import { Construct } from "constructs";
 import { generateBatch } from "../shared/util";
 import { movies,movieReviews } from "../seed/movies";
 import * as apig from "aws-cdk-lib/aws-apigateway";
+import * as node from "aws-cdk-lib/aws-lambda-nodejs";
+import * as iam from "aws-cdk-lib/aws-iam"
 
-export class RestAPIStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
-    super(scope, id, props);
+type AppApiProps = {
+  userPoolId: string;
+  userPoolClientId: string;
+};
 
+export class AppApi extends Construct {
+  constructor(scope: Construct, id: string, props: AppApiProps) {
+    super(scope, id);
+
+  
+  //Auth Functions
+  const appCommonFnProps = {
+    architecture: lambda.Architecture.ARM_64,
+    timeout: cdk.Duration.seconds(10),
+    memorySize: 128,
+    runtime: lambda.Runtime.NODEJS_16_X,
+    handler: "handler",
+    environment: {
+      USER_POOL_ID: props.userPoolId,
+      CLIENT_ID: props.userPoolClientId,
+      REGION: cdk.Aws.REGION,
+    },
+  };
+
+  const authorizerFn = new node.NodejsFunction(this, "AuthorizerFn", {
+    ...appCommonFnProps,
+    entry: "./lambdas/auth/authorizer.ts",
+  });
+
+  const requestAuthorizer = new apig.RequestAuthorizer(
+    this,
+    "RequestAuthorizer",
+    {
+      identitySources: [apig.IdentitySource.header("cookie")],
+      handler: authorizerFn,
+      resultsCacheTtl: cdk.Duration.minutes(0),
+    }
+  );
+  
     // Tables 
     const moviesTable = new dynamodb.Table(this, "MoviesTable", {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -212,12 +249,29 @@ export class RestAPIStack extends cdk.Stack {
       },
     });
 
+    const protectedRes = api.root.addResource("protected");
+
+    const publicRes = api.root.addResource("public");
+
+    const protectedFn = new node.NodejsFunction(this, "ProtectedFn", {
+      ...appCommonFnProps,
+      entry: "./lambdas/protected.ts",
+    });
+
+    const publicFn = new node.NodejsFunction(this, "PublicFn", {
+      ...appCommonFnProps,
+      entry: "./lambdas/public.ts",
+    });
+
+    //Endpoints
+    
   
     const moviesEndpoint = api.root.addResource("movies");
     moviesEndpoint.addMethod(
       "GET",
       new apig.LambdaIntegration(getAllMoviesFn, { proxy: true })
     );
+
     moviesEndpoint.addMethod(
       "POST",
       new apig.LambdaIntegration(newMovieFn, { proxy:true })
@@ -245,12 +299,20 @@ export class RestAPIStack extends cdk.Stack {
    
     movieReviewersNameEndpoint.addMethod(
       "PUT",
-      new apig.LambdaIntegration(updateMovieReviewFn, { proxy: true })
+      new apig.LambdaIntegration(updateMovieReviewFn, { proxy: true }),
+      {
+        authorizer: requestAuthorizer,
+        authorizationType: apig.AuthorizationType.CUSTOM,
+      }
     )
-    
+    //POST needs Authorization
     movieReviewEndpoint.addMethod(
       "POST",
-      new apig.LambdaIntegration(addMovieReviewFn, { proxy: true })
+      new apig.LambdaIntegration(addMovieReviewFn, { proxy: true }),
+      {
+        authorizer: requestAuthorizer,
+        authorizationType: apig.AuthorizationType.CUSTOM,
+      }
     );
     movieReviewEndpoint.addMethod(
       "GET",
@@ -262,7 +324,13 @@ export class RestAPIStack extends cdk.Stack {
       new apig.LambdaIntegration(getMovieReviewsByIdFn, { proxy: true })
     );
 
-    
-      }
+      
+    protectedRes.addMethod("GET", new apig.LambdaIntegration(protectedFn), {
+      authorizer: requestAuthorizer,
+      authorizationType: apig.AuthorizationType.CUSTOM,
+    });
+
+    publicRes.addMethod("GET", new apig.LambdaIntegration(publicFn));
     }
-    
+ }
+  
