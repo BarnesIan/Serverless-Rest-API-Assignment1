@@ -1,47 +1,55 @@
 import { APIGatewayProxyHandlerV2 } from "aws-lambda";
-
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient,QueryCommand } from "@aws-sdk/lib-dynamodb";
-
-
+import { DynamoDBDocumentClient, QueryCommandInput, QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 const ddbDocClient = createDDbDocClient();
 
 export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
   try {
-    // Print Event
-    console.log("Event: ", event);
-      const parameters = event?.pathParameters;
-      const movieId = parameters?.movieId ? parseInt(parameters.movieId) : undefined;
-      const reviewerName = event?.pathParameters?.reviewerName;
+    //const parameters = event?.pathParameters;
+    const movieId = parseInt(event?.pathParameters?.movieId ?? "");
+    const param = event?.pathParameters?.reviewerName ? event?.pathParameters?.reviewerName : undefined;
 
-
-    if (!movieId || !reviewerName) {
+    const regex = new RegExp("20[0-9][0-9]")
+    if (!movieId || !param) {
       return {
         statusCode: 404,
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify({ Message: "Invalid movie Id or reviewer name" }),
+        body: JSON.stringify({ Message: "Invalid movie Id or parameters entered" }),
       };
     }
+    
+    let commandInput: QueryCommandInput={
+      TableName: process.env.TABLE_NAME,
+  }
 
-    const commandInput = {
+    if (regex.test(param)) {
+       commandInput = {
+        ...commandInput, 
+        TableName: process.env.TABLE_NAME,
+        KeyConditionExpression: "movieId = :m ",
+        FilterExpression: "begins_with(reviewDate, :y)",
+        ExpressionAttributeValues: {
+          ":m": movieId,
+          ":y": param,
+        },
+      };
+    } else {
+      commandInput = {
+        ...commandInput,
         TableName: process.env.TABLE_NAME,
         KeyConditionExpression: "movieId = :m and reviewerName = :r",
         ExpressionAttributeValues: {
           ":m": movieId,
-          ":r": reviewerName,
+          ":r": param,
         },
       };
-  
-      const commandOutput = await ddbDocClient.send(
-          new QueryCommand(commandInput)
-          );
+    } 
 
+    const commandOutput = await ddbDocClient.send(new QueryCommand(commandInput));
 
-
-    // Return Response
     return {
       statusCode: 200,
       headers: {

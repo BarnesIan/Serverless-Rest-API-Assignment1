@@ -13,6 +13,8 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
   try {
     // Print Event
     console.log("Event: ", event);
+    const movieId = parseInt(event?.pathParameters?.movieId ?? "");
+    const reviewerName = event?.pathParameters?.reviewerName;
     const body = event.body ? JSON.parse(event.body) : undefined;
     if (!body) {
       return {
@@ -36,9 +38,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event, context) => {
       };
     }
 
-    // Check if the movieId and reviewerName are in the request body
-    const movieId = body.movieId;
-    const reviewerName = body.reviewerName;
+  
 
     if (!movieId || !reviewerName) {
       return {

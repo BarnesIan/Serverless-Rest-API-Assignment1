@@ -134,6 +134,7 @@ export class RestAPIStack extends cdk.Stack {
             },
           }
         );
+        
         const updateMovieReviewFn = new lambdanode.NodejsFunction(
           this,
           "updateMovieReview",
@@ -179,6 +180,7 @@ export class RestAPIStack extends cdk.Stack {
         movieReviewsTable.grantReadWriteData(getMovieReviewsByIdFn)
         movieReviewsTable.grantReadWriteData(getMovieReviewsByReviewerNameFn)
         movieReviewsTable.grantReadWriteData(updateMovieReviewFn)
+        
         // REST API 
     const api = new apig.RestApi(this, "RestAPI", {
       description: "demo api",
@@ -224,6 +226,7 @@ export class RestAPIStack extends cdk.Stack {
       "GET",
       new apig.LambdaIntegration(getMovieReviewsByReviewerNameFn, { proxy: true })
     );
+   
     movieReviewersNameEndpoint.addMethod(
       "PUT",
       new apig.LambdaIntegration(updateMovieReviewFn, { proxy: true })
